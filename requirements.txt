@@ -1,0 +1,6 @@
+Django~=5.0.0
+djangorestframework~=3.15.0
+gunicorn~=21.2.0
+psycopg2-binary~=2.9.9 # Si usas PostgreSQL (Recomendado para producción)
+Pillow~=10.1.0 # Si manejas imágenes o usas campos ImageField
+# Agrega aquí cualquier otra dependencia específica de tu proyecto

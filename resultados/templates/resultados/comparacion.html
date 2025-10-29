@@ -1,0 +1,316 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de Arquitecturas de Deep Learning | Rendimiento CNN</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Exo+2:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <h1>Análisis de Arquitecturas de Deep Learning</h1>
+        <p>Comparativa de Rendimiento y Eficiencia entre Modelos CNN</p>
+    </header>
+
+    <main id="content">
+        <h2 class="loading">Cargando métricas de rendimiento...</h2>
+    </main>
+
+    <footer>
+        <p>Plataforma de Análisis de Datos | Estado del Proyecto: Activo | © 2025</p>
+    </footer>
+
+    <script>
+        const API_COMPARACION = '/api/v1/comparacion/';
+        const content = document.getElementById('content');
+
+        function renderTeorico(data) {
+            let html = '<h2>1. Métricas Históricas de Rendimiento (ImageNet)</h2>';
+            html += '<table class="data-table"><thead><tr><th>Arquitectura</th><th>Año</th><th>Error Top-5</th><th>Parámetros (M)</th><th>Innovación Clave</th></tr></thead><tbody>';
+            data.forEach(d => {
+                html += `<tr>
+                    <td>${d.arquitectura}</td>
+                    <td>${d.año}</td>
+                    <td><span class="error-metric">${d.error_top_5}</span></td>
+                    <td>${d.parametros_M.toFixed(1)}</td>
+                    <td>${d.innovacion}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            return html;
+        }
+
+        function renderComparacionSeparada(alexData, resData, denseData) {
+            let html = '<h2>5. Resumen Comparativo de Métricas Clave</h2>';
+            html += '<p>Visualización directa y concisa del contraste entre el Error Top-5 y la Complejidad.</p>';
+            
+            html += '<table class="comparison-summary-table data-table">'; // Reutilizamos estilos de tabla
+            html += '<thead><tr><th>Métrica</th><th>AlexNet (2012)</th><th>ResNet-50 (2015)</th><th>DenseNet-121 (2017)</th></tr></thead>';
+            html += '<tbody>';
+            
+            // Fila de Error Top-5
+            html += `<tr>
+                <td>Error Top-5 (%)</td>
+                <td><span class="error-metric-large">${alexData.error_top_5}</span></td>
+                <td><span class="success-metric-large">${resData.error_top_5}</span></td>
+                <td><span class="success-metric-large">${denseData.error_top_5}</span></td>
+            </tr>`;
+
+            // Fila de Parámetros
+            html += `<tr>
+                <td>Parámetros (Millones)</td>
+                <td><span class="param-metric">${alexData.parametros_M.toFixed(1)}M</span></td>
+                <td><span class="param-metric">${resData.parametros_M.toFixed(1)}M</span></td>
+                <td><span class="param-metric">${denseData.parametros_M.toFixed(1)}M</span></td>
+            </tr>`;
+
+            // Fila de Año
+            html += `<tr>
+                <td>Año de Introducción</td>
+                <td>${alexData.año}</td>
+                <td>${resData.año}</td>
+                <td>${denseData.año}</td>
+            </tr>`;
+
+            html += '</tbody></table>';
+            return html;
+        }
+
+
+        async function loadAllData() {
+            try {
+                content.innerHTML = ''; 
+                const compResponse = await fetch(API_COMPARACION);
+                if (!compResponse.ok) throw new Error('No se pudo cargar la API de comparación.');
+                const dataComp = await compResponse.json();
+
+                content.innerHTML += `<h1 class="section-title">${dataComp.titulo}</h1>`;
+                content.innerHTML += renderTeorico(dataComp.rendimiento_teorico_imagenet);
+
+                content.innerHTML += '<h2>2. Conteo de Parámetros (Complejidad Estructural)</h2>';
+                content.innerHTML += `<div class="card-container">
+                    <div class="stat-card"><p class="stat-label">AlexNet</p><p class="stat-value">${dataComp.conteo_parametros_practico.AlexNet_completo}</p><p class="stat-unit">Parámetros</p></div>
+                    <div class="stat-card"><p class="stat-label">ResNet-50</p><p class="stat-value">${dataComp.conteo_parametros_practico.ResNet50_base}</p><p class="stat-unit">Parámetros</p></div>
+                    <div class="stat-card"><p class="stat-label">DenseNet-121</p><p class="stat-value">${dataComp.conteo_parametros_practico.DenseNet121_base}</p><p class="stat-unit">Parámetros</p></div>
+                </div>`;
+
+                content.innerHTML += '<h2>3. Rendimiento Operativo: Simulación AlexNet</h2>';
+                content.innerHTML += `<div class="results-box">
+                    <p>Precisión Final en Validación: <span class="metric-highlight">${dataComp.resultados_alexnet_simulados.precision_final_validacion}</span></p>
+                    <p>Observación del Modelo: <span class="observation-text">${dataComp.resultados_alexnet_simulados.observacion}</span></p>
+                </div>`;
+
+                // --- DATOS PARA SECCIONES 4 Y 5 ---
+                const alex = dataComp.rendimiento_teorico_imagenet.find(d => d.arquitectura === 'AlexNet');
+                const res = dataComp.rendimiento_teorico_imagenet.find(d => d.arquitectura === 'ResNet-50');
+                const den = dataComp.rendimiento_teorico_imagenet.find(d => d.arquitectura === 'DenseNet-121');
+
+                // --- SECCIÓN 4: RENDIMIENTO INDIVIDUAL (Cajas Separadas) ---
+                content.innerHTML += '<h2>4. Rendimiento Arquitectónico Individual</h2>';
+                content.innerHTML += '<p>Detalle de las métricas clave y la innovación de cada modelo por separado.</p>';
+                content.innerHTML += '<div class="comparison-grid">';
+                [alex, res, den].forEach(m => {
+                    content.innerHTML += `<div class="comparison-card">
+                        <h3>${m.arquitectura} (${m.año})</h3>
+                        <div class="data-group"><p>Error Top-5:</p><span class="${m.error_top_5 > 5 ? 'error-metric' : 'success-metric' }">${m.error_top_5}</span></div>
+                        <div class="data-group"><p>Parámetros:</p><span>${m.parametros_M.toFixed(1)}M</span></div>
+                        <p class="innovation-note">${m.innovacion}</p>
+                    </div>`;
+                });
+                content.innerHTML += '</div>';
+
+                // --- SECCIÓN 5: COMPARACIÓN (Tabla Separada) ---
+                content.innerHTML += renderComparacionSeparada(alex, res, den);
+
+
+            } catch (error) {
+                content.innerHTML = `<h2>❌ Error al cargar datos</h2><p>${error.message}</p>`;
+            }
+        }
+        loadAllData();
+    </script>
+
+    <style>
+    /* === ESTILO FUTURISTA PÚRPURA === */
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Exo+2:wght@400;600&display=swap');
+
+    :root {
+        --bg-main: #090013;
+        --bg-card: rgba(30, 0, 45, 0.95);
+        --color-primary: #C77DFF; /* Púrpura brillante */
+        --color-secondary: #9D4EDD;
+        --color-accent: #E0AAFF;
+        --color-text: #FFFFFF;
+        --color-success: #00FFB7; /* Verde/Cian para éxito */
+        --color-error: #FF4B91; /* Rosa/Rojo para error */
+        --radius: 12px;
+    }
+
+    body {
+        /* Fondo radial para un efecto de profundidad */
+        background: radial-gradient(circle at 25% 20%, #200036 0%, #080010 80%);
+        color: var(--color-text);
+        font-family: 'Exo 2', sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+
+    header {
+        text-align: center;
+        background: linear-gradient(180deg, #18002C, #0B0017);
+        padding: 50px 5%;
+        border-bottom: 2px solid var(--color-primary);
+        box-shadow: 0 0 40px rgba(199,125,255,0.3);
+    }
+    header h1 {
+        font-family: 'Orbitron', sans-serif;
+        color: var(--color-primary);
+        text-shadow: 0 0 20px var(--color-primary);
+        font-size: 2.5em;
+    }
+    header p {
+        color: var(--color-accent);
+    }
+
+    main {
+        padding: 50px 5%;
+        max-width: 1300px;
+        margin: auto;
+    }
+
+    h2 {
+        color: var(--color-primary);
+        font-family: 'Orbitron', sans-serif;
+        border-left: 5px solid var(--color-secondary);
+        padding-left: 15px;
+        margin-top: 40px; /* Espacio extra para separar secciones */
+    }
+
+    /* === TABLAS (GENERAL Y COMPARACIÓN) === */
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--bg-card);
+        border-radius: var(--radius);
+        overflow: hidden;
+        box-shadow: 0 0 30px rgba(157,78,221,0.4);
+        margin-bottom: 30px;
+    }
+    .data-table th {
+        background: rgba(157,78,221,0.3);
+        color: var(--color-accent);
+        padding: 12px;
+    }
+    .data-table td {
+        text-align: center;
+        padding: 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .data-table tr:hover {
+        background-color: rgba(157,78,221,0.1);
+    }
+    /* Estilos para métricas de color */
+    .error-metric { color: var(--color-error); font-weight: 600; }
+    .success-metric { color: var(--color-success); font-weight: 600; }
+
+    /* Estilos para la NUEVA tabla de comparación (Sección 5) */
+    .comparison-summary-table th {
+        background: var(--color-primary);
+        color: var(--bg-main);
+    }
+    .comparison-summary-table td {
+        text-align: center;
+        font-family: 'Orbitron', sans-serif;
+    }
+    .error-metric-large { color: var(--color-error); font-size: 1.2em; text-shadow: 0 0 5px var(--color-error); }
+    .success-metric-large { color: var(--color-success); font-size: 1.2em; text-shadow: 0 0 5px var(--color-success); }
+    .param-metric { color: var(--color-accent); font-size: 1.1em; }
+
+
+    /* === TARJETAS DE ESTADÍSTICAS (Sección 2) === */
+    .card-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 25px;
+    }
+    .stat-card {
+        background: linear-gradient(145deg, #1A002F, #0D001E);
+        border: 1px solid var(--color-secondary);
+        border-radius: var(--radius);
+        text-align: center;
+        padding: 25px;
+        transition: 0.3s;
+        box-shadow: 0 0 25px rgba(199,125,255,0.2);
+    }
+    .stat-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 0 35px rgba(199,125,255,0.5);
+    }
+    .stat-value {
+        color: var(--color-primary);
+        font-family: 'Orbitron', sans-serif;
+        font-size: 2.2em;
+    }
+
+    /* === RESULTADOS (Sección 3) === */
+    .results-box {
+        background: var(--bg-card);
+        border-left: 5px solid var(--color-primary);
+        border-radius: var(--radius);
+        padding: 25px;
+        box-shadow: 0 0 30px rgba(199,125,255,0.3);
+    }
+    .metric-highlight {
+        color: var(--color-success);
+        font-size: 1.5em;
+    }
+
+    /* === RENDIMIENTO INDIVIDUAL (Sección 4) === */
+    .comparison-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+    .comparison-card {
+        background: linear-gradient(160deg, #1E0030, #0F001A);
+        border-radius: var(--radius);
+        padding: 25px;
+        border: 1px solid var(--color-secondary);
+        transition: 0.3s;
+        box-shadow: 0 0 25px rgba(157,78,221,0.3);
+    }
+    .comparison-card:hover {
+        box-shadow: 0 0 45px rgba(199,125,255,0.6);
+    }
+    .data-group {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding: 8px 0;
+        color: #FFF;
+    }
+    .data-group span {
+        font-weight: 600;
+        font-family: 'Orbitron', sans-serif;
+    }
+    .innovation-note {
+        margin-top: 10px;
+        font-size: 0.9em;
+        color: #EBD7FF;
+        font-style: italic;
+    }
+
+    footer {
+        text-align: center;
+        padding: 20px;
+        background: #0A0015;
+        color: #C7B2FF;
+        font-size: 0.85em;
+        border-top: 1px solid rgba(199,125,255,0.3);
+    }
+    </style>
+</body>
+</html>
