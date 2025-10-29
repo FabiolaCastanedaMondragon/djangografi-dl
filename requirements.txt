@@ -7,3 +7,4 @@ Pillow~=10.1.0
 numpy
 tensorflow  <-- ¡AÑADIR ESTO!
 keras       <-- ¡AÑADIR ESTO! (Suele ser necesaria)
+tensorflow
