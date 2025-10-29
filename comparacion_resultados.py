@@ -1,40 +1,19 @@
-import numpy as np
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
-from tensorflow.keras.applications import ResNet50, DenseNet121
+# /opt/render/project/src/comparacion_resultados.py
+
+import numpy as np 
+
+# SE ELIMINARON LAS IMPORTACIONES GLOBALES DE TENSORFLOW/KERAS 
+# PARA EVITAR EL ERROR DE INICIO DEL SERVIDOR EN RENDER FREE TIER.
 
 # --- CONFIGURACIÓN BÁSICA ---
 IMAGE_SIZE = 128
 INPUT_SHAPE = (IMAGE_SIZE, IMAGE_SIZE, 3) 
 NUM_CLASSES = 2 
 
-# --- IMPLEMENTACIÓN DE ALEXNET (SOLO ESTRUCTURA) ---
-def create_alexnet(input_shape, num_classes):
-    """Define la arquitectura AlexNet para obtener el conteo de parámetros."""
-    model = Sequential([
-        Conv2D(96, (7, 7), strides=(2, 2), activation='relu', input_shape=input_shape),
-        BatchNormalization(),
-        MaxPooling2D((3, 3), strides=(2, 2)),
-        Conv2D(256, (5, 5), padding='same', activation='relu'),
-        BatchNormalization(),
-        MaxPooling2D((3, 3), strides=(2, 2)),
-        Conv2D(384, (3, 3), padding='same', activation='relu'),
-        Conv2D(384, (3, 3), padding='same', activation='relu'),
-        Conv2D(256, (3, 3), padding='same', activation='relu'),
-        MaxPooling2D((3, 3), strides=(2, 2)),
-        Flatten(),
-        Dense(4096, activation='relu'),
-        Dropout(0.5), 
-        Dense(4096, activation='relu'),
-        Dropout(0.5),
-        Dense(num_classes, activation='softmax')
-    ])
-    return model
-
 # --- FUNCIÓN PRINCIPAL DE LA API ---
 def obtener_resultados_comparacion():
-    """Genera los resultados de la TAREA 4 para la API."""
+    """Genera los resultados de la TAREA 4 para la API. La sección de Conteo de Parámetros
+    está protegida para que el servidor pueda iniciar sin TensorFlow."""
     
     # A. Datos de Investigación Teórica (Celda 1)
     rendimiento_teorico = [
@@ -44,7 +23,40 @@ def obtener_resultados_comparacion():
     ]
 
     # B. Conteo de Parámetros (Celda 6)
+    conteo_parametros = {}
+    
+    # Intentar importar y usar TensorFlow localmente. Esto fallará en Render, pero permitirá que el servidor arranque.
     try:
+        # Importación local de las librerías pesadas
+        import tensorflow as tf
+        from tensorflow.keras.models import Sequential
+        from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
+        from tensorflow.keras.applications import ResNet50, DenseNet121
+
+        # Re-definición de AlexNet (debe estar dentro del bloque try/except)
+        def create_alexnet(input_shape, num_classes):
+            """Define la arquitectura AlexNet para obtener el conteo de parámetros."""
+            model = Sequential([
+                Conv2D(96, (7, 7), strides=(2, 2), activation='relu', input_shape=input_shape),
+                BatchNormalization(),
+                MaxPooling2D((3, 3), strides=(2, 2)),
+                Conv2D(256, (5, 5), padding='same', activation='relu'),
+                BatchNormalization(),
+                MaxPooling2D((3, 3), strides=(2, 2)),
+                Conv2D(384, (3, 3), padding='same', activation='relu'),
+                Conv2D(384, (3, 3), padding='same', activation='relu'),
+                Conv2D(256, (3, 3), padding='same', activation='relu'),
+                MaxPooling2D((3, 3), strides=(2, 2)),
+                Flatten(),
+                Dense(4096, activation='relu'),
+                Dropout(0.5), 
+                Dense(4096, activation='relu'),
+                Dropout(0.5),
+                Dense(num_classes, activation='softmax')
+            ])
+            return model
+            
+        # Ejecución del conteo de parámetros
         alexnet_model = create_alexnet(INPUT_SHAPE, NUM_CLASSES)
         resnet50_base = ResNet50(weights=None, include_top=False, input_shape=INPUT_SHAPE) 
         densenet121_base = DenseNet121(weights=None, include_top=False, input_shape=INPUT_SHAPE)
@@ -55,8 +67,13 @@ def obtener_resultados_comparacion():
             "DenseNet121_base": f"{densenet121_base.count_params():,}"
         }
         
+    except (ImportError, ModuleNotFoundError) as e:
+        # Este es el error que esperaremos en Render Free Tier
+        conteo_parametros = {"error": f"Librerías de ML no instaladas para conteo de parámetros. El servidor está operativo."}
     except Exception as e:
+        # Otros errores inesperados
         conteo_parametros = {"error": f"Fallo al contar parámetros. Detalle: {e.__class__.__name__}"}
+
 
     # C. Resultados Simulados de Entrenamiento (Celda 5)
     resultados_alexnet_entrenamiento = {
