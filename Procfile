@@ -1,1 +1,1 @@
-web: gunicorn DJANGOGRAFI.wsgi --log-file -
+web: gunicorn DJANGOGRAFI.configuracion.wsgi:application
