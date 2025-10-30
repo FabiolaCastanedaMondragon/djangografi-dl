@@ -61,7 +61,24 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'configuracion.urls'
 
-# ... (TEMPLATES permanece igual) ...
+# --- INICIO DEL BLOQUE TEMPLATES FALTANTE (SOLUCIÓN admin.E403) ---
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [BASE_DIR / 'templates'],
+        'APP_DIRS': True, # CRUCIAL para el admin y plantillas de apps
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+# --- FIN DEL BLOQUE TEMPLATES FALTANTE ---
+
 
 WSGI_APPLICATION = 'configuracion.wsgi.application'
 
