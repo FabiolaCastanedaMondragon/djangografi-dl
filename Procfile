@@ -1,1 +1,1 @@
-web: gunicorn DJANGOGRAFI.configuracion.wsgi:application
+web: gunicorn configuracion.wsgi:application
