@@ -13,7 +13,7 @@ NUM_CLASSES = 2
 # --- FUNCIÓN PRINCIPAL DE LA API ---
 def obtener_resultados_comparacion():
     """Genera los resultados de la TAREA 4 para la API. La sección de Conteo de Parámetros
-    está protegida para que el servidor pueda iniciar sin TensorFlow."""
+    ha sido eliminada de la respuesta final (Punto 2)."""
     
     # A. Datos de Investigación Teórica (Celda 1)
     rendimiento_teorico = [
@@ -22,58 +22,8 @@ def obtener_resultados_comparacion():
         {"arquitectura": "DenseNet-121", "año": 2017, "error_top_5": "7.03%", "parametros_M": 8.0, "innovacion": "Bloques Densos"},
     ]
 
-    # B. Conteo de Parámetros (Celda 6)
-    conteo_parametros = {}
-    
-    # Intentar importar y usar TensorFlow localmente. Esto fallará en Render, pero permitirá que el servidor arranque.
-    try:
-        # Importación local de las librerías pesadas
-        import tensorflow as tf
-        from tensorflow.keras.models import Sequential
-        from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
-        from tensorflow.keras.applications import ResNet50, DenseNet121
-
-        # Re-definición de AlexNet (debe estar dentro del bloque try/except)
-        def create_alexnet(input_shape, num_classes):
-            """Define la arquitectura AlexNet para obtener el conteo de parámetros."""
-            model = Sequential([
-                Conv2D(96, (7, 7), strides=(2, 2), activation='relu', input_shape=input_shape),
-                BatchNormalization(),
-                MaxPooling2D((3, 3), strides=(2, 2)),
-                Conv2D(256, (5, 5), padding='same', activation='relu'),
-                BatchNormalization(),
-                MaxPooling2D((3, 3), strides=(2, 2)),
-                Conv2D(384, (3, 3), padding='same', activation='relu'),
-                Conv2D(384, (3, 3), padding='same', activation='relu'),
-                Conv2D(256, (3, 3), padding='same', activation='relu'),
-                MaxPooling2D((3, 3), strides=(2, 2)),
-                Flatten(),
-                Dense(4096, activation='relu'),
-                Dropout(0.5), 
-                Dense(4096, activation='relu'),
-                Dropout(0.5),
-                Dense(num_classes, activation='softmax')
-            ])
-            return model
-            
-        # Ejecución del conteo de parámetros
-        alexnet_model = create_alexnet(INPUT_SHAPE, NUM_CLASSES)
-        resnet50_base = ResNet50(weights=None, include_top=False, input_shape=INPUT_SHAPE) 
-        densenet121_base = DenseNet121(weights=None, include_top=False, input_shape=INPUT_SHAPE)
-
-        conteo_parametros = {
-            "AlexNet_completo": f"{alexnet_model.count_params():,}",
-            "ResNet50_base": f"{resnet50_base.count_params():,}",
-            "DenseNet121_base": f"{densenet121_base.count_params():,}"
-        }
-        
-    except (ImportError, ModuleNotFoundError) as e:
-        # Este es el error que esperaremos en Render Free Tier
-        conteo_parametros = {"error": f"Librerías de ML no instaladas para conteo de parámetros. El servidor está operativo."}
-    except Exception as e:
-        # Otros errores inesperados
-        conteo_parametros = {"error": f"Fallo al contar parámetros. Detalle: {e.__class__.__name__}"}
-
+    # B. Conteo de Parámetros (Bloque try/except completamente eliminado del flujo de datos)
+    # Se omite todo el cálculo y la variable "conteo_parametros" ya no es necesaria.
 
     # C. Resultados Simulados de Entrenamiento (Celda 5)
     resultados_alexnet_entrenamiento = {
@@ -82,10 +32,9 @@ def obtener_resultados_comparacion():
         "observacion": "Los resultados confirman que AlexNet obtiene menor precisión en la clasificación que ResNet/DenseNet."
     }
 
-
+    # Se retorna el diccionario final SIN la clave 'conteo_parametros_practico'
     return {
         "titulo": "Análisis y Comparación de Arquitecturas CNN (TAREA 4)",
         "rendimiento_teorico_imagenet": rendimiento_teorico,
-        "conteo_parametros_practico": conteo_parametros,
         "resultados_alexnet_simulados": resultados_alexnet_entrenamiento
     }
